@@ -55,6 +55,7 @@ const (
 	LevelNotice
 	LevelInformational
 	LevelDebug
+	LevelTrace
 )
 
 // levelLogLogger is defined to implement log.Logger
@@ -77,7 +78,6 @@ const (
 // Legacy log level constants to ensure backwards compatibility.
 const (
 	LevelInfo  = LevelInformational
-	LevelTrace = LevelDebug
 	LevelWarn  = LevelWarning
 )
 
@@ -94,7 +94,7 @@ type Logger interface {
 
 var (
 	adapters    = make(map[string]newLoggerFunc)
-	levelPrefix = [LevelDebug + 1]string{"[M]", "[A]", "[C]", "[E]", "[W]", "[N]", "[I]", "[D]"}
+	levelPrefix = [LevelTrace + 1]string{"[M]", "[A]", "[C]", "[E]", "[W]", "[N]", "[I]", "[D]", "[T]"}
 )
 
 // Register makes a log provide available by the provided name.
@@ -560,11 +560,11 @@ func (bl *BeeLogger) Info(format string, v ...interface{}) {
 // Trace Log TRACE level message.
 // compatibility alias for Debug()
 func (bl *BeeLogger) Trace(format string, v ...interface{}) {
-	if LevelDebug > bl.level {
+	if LevelTrace > bl.level {
 		return
 	}
 	lm := &LogMsg{
-		Level: LevelDebug,
+		Level: LevelTrace,
 		Msg:   format,
 		When:  time.Now(),
 		Args:  v,
