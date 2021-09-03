@@ -45,6 +45,7 @@ var colors = []brush{
 	newBrush("1;32"), // Notice             green
 	newBrush("1;34"), // Informational      blue
 	newBrush("1;44"), // Debug              Background blue
+	newBrush("1;44"), // Trace              Background blue
 }
 
 // consoleWriter implements LoggerInterface and writes messages to terminal.
@@ -77,7 +78,7 @@ func NewConsole() Logger {
 func newConsole() *consoleWriter {
 	cw := &consoleWriter{
 		lg:       newLogWriter(ansicolor.NewAnsiColorWriter(os.Stdout)),
-		Level:    LevelDebug,
+		Level:    LevelTrace,
 		Colorful: true,
 	}
 	cw.formatter = cw
