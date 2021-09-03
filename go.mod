@@ -1,4 +1,4 @@
-module github.com/beego/beego/v2
+module github.com/v2rayA/beego/v2
 
 go 1.14
 
