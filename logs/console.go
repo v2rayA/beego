@@ -54,6 +54,7 @@ type consoleWriter struct {
 	formatter LogFormatter
 	Formatter string `json:"formatter"`
 	Level     int    `json:"level"`
+	Timestamp bool   `json:"timestamp"`
 	Colorful  bool   `json:"color"` // this filed is useful only when system's terminal supports color
 }
 
@@ -62,8 +63,11 @@ func (c *consoleWriter) Format(lm *LogMsg) string {
 	if c.Colorful {
 		msg = strings.Replace(msg, levelPrefix[lm.Level], colors[lm.Level](levelPrefix[lm.Level]), 1)
 	}
-	h, _, _ := formatTimeHeader(lm.When)
-	return string(append(h, msg...))
+	if c.Timestamp {
+		h, _, _ := formatTimeHeader(lm.When)
+		return string(append(h, msg...))
+	}
+	return msg
 }
 
 func (c *consoleWriter) SetFormatter(f LogFormatter) {
@@ -77,9 +81,10 @@ func NewConsole() Logger {
 
 func newConsole() *consoleWriter {
 	cw := &consoleWriter{
-		lg:       newLogWriter(ansicolor.NewAnsiColorWriter(os.Stdout)),
-		Level:    LevelTrace,
-		Colorful: true,
+		lg:        newLogWriter(ansicolor.NewAnsiColorWriter(os.Stdout)),
+		Level:     LevelTrace,
+		Colorful:  true,
+		Timestamp: true,
 	}
 	cw.formatter = cw
 	return cw
