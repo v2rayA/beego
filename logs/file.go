@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/djherbis/times"
 	"io"
 	"os"
 	"path"
@@ -234,11 +235,17 @@ func (w *fileLogWriter) initFd() error {
 	if err != nil {
 		return fmt.Errorf("get stat err: %s", err)
 	}
+	var bTime time.Time
+	if times.HasBirthTime {
+		bTime = times.Get(fInfo).BirthTime()
+	} else {
+		bTime = time.Now()
+	}
 	w.maxSizeCurSize = int(fInfo.Size())
-	w.dailyOpenTime = time.Now()
-	w.dailyOpenDate = w.dailyOpenTime.Day()
-	w.hourlyOpenTime = time.Now()
-	w.hourlyOpenDate = w.hourlyOpenTime.Hour()
+	w.dailyOpenTime = bTime
+	w.dailyOpenDate = DaySince1970(w.dailyOpenTime)
+	w.hourlyOpenTime = bTime
+	w.hourlyOpenDate = HourSince1970(w.hourlyOpenTime)
 	w.maxLinesCurLines = 0
 	if w.Hourly {
 		go w.hourlyRotate(w.hourlyOpenTime)
@@ -255,13 +262,21 @@ func (w *fileLogWriter) initFd() error {
 	return nil
 }
 
+func DaySince1970(t time.Time) int {
+	return int(t.Sub(time.UnixMilli(0)).Hours()) / 24
+}
+
+func HourSince1970(t time.Time) int {
+	return int(t.Sub(time.UnixMilli(0)).Hours())
+}
+
 func (w *fileLogWriter) dailyRotate(openTime time.Time) {
 	y, m, d := openTime.Add(24 * time.Hour).Date()
 	nextDay := time.Date(y, m, d, 0, 0, 0, 0, openTime.Location())
 	tm := time.NewTimer(time.Duration(nextDay.UnixNano() - openTime.UnixNano() + 100))
 	<-tm.C
 	w.Lock()
-	if w.needRotateDaily(time.Now().Day()) {
+	if w.needRotateDaily(DaySince1970(time.Now())) {
 		if err := w.doRotate(time.Now()); err != nil {
 			fmt.Fprintf(os.Stderr, "FileLogWriter(%q): %s\n", w.Filename, err)
 		}
@@ -276,7 +291,7 @@ func (w *fileLogWriter) hourlyRotate(openTime time.Time) {
 	tm := time.NewTimer(time.Duration(nextHour.UnixNano() - openTime.UnixNano() + 100))
 	<-tm.C
 	w.Lock()
-	if w.needRotateHourly(time.Now().Hour()) {
+	if w.needRotateHourly(HourSince1970(time.Now())) {
 		if err := w.doRotate(time.Now()); err != nil {
 			fmt.Fprintf(os.Stderr, "FileLogWriter(%q): %s\n", w.Filename, err)
 		}
