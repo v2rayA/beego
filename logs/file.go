@@ -173,7 +173,8 @@ func (w *fileLogWriter) WriteMsg(lm *LogMsg) error {
 		return nil
 	}
 
-	_, d, h := formatTimeHeader(lm.When)
+	d := DaySince1970(lm.When)
+	h := HourSince1970(lm.When)
 
 	msg := w.formatter.Format(lm)
 	if w.Rotate {
@@ -221,7 +222,13 @@ func (w *fileLogWriter) createLogFile() (*os.File, error) {
 	filepath := path.Dir(w.Filename)
 	os.MkdirAll(filepath, os.FileMode(perm))
 
+
+	if _, e := os.Lstat(w.Filename); os.IsNotExist(e) {
+		_ = CreateFileAgainstSystemTunneling(w.Filename)
+	}
+
 	fd, err := os.OpenFile(w.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.FileMode(perm))
+
 	if err == nil {
 		// Make sure file perm is user set perm cause of `os.OpenFile` will obey umask
 		os.Chmod(w.Filename, os.FileMode(perm))
